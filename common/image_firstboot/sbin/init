@@ -1,0 +1,45 @@
+#!/bin/sh
+# SPDX-License-Identifier: MIT
+
+# empty stub
+gen_and_send_log() { true; }
+
+install() {
+	local DISK="" DISKPART="" loop=""
+	sd_boot=1
+
+	echo
+	echo
+	echo "Starting first boot script"
+	echo
+
+	# run common hooks
+	. /lib/rc/sh/functions-atmark.sh
+
+	firstboot_setup
+
+	# setup env
+	DISK=$(swupdate -g)
+	# Our version of swupdate sometimes returns path out of /dev early boot
+	# this should be fixed in a later update, but there's no harm in trying
+	# with /dev explicitly until then
+	[ -e "/dev/$DISK" ] && DISK="/dev/$DISK"
+	[ -e "$DISK" ] || DISK="$(findfs "$DISK")"
+	[ -e "$DISK" ] || error "Could not find what partition linux booted from to guess what to flash"
+
+	DISKPART=${DISK%[0-9]}
+	DISK=${DISKPART%p}
+
+	mount --bind /live/rootfs /target \
+		|| error "Could not bind mount /live/rootfs to /target"
+	firstboot
+	umount /target
+
+	echo "First boot setup finished. Rebooting now"
+
+	# and reboot into new system
+	sync
+	reboot -f
+}
+
+install

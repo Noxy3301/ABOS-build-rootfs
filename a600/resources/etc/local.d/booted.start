@@ -1,0 +1,20 @@
+#!/bin/sh
+
+# Try to fix lwb5+ wifi if missing
+# (this seems to happen once every few hundred reboots)
+if [ -e /sys/devices/platform/lwb5p-wlan-reset/reset/wlan_rst ]; then
+	i=1
+	while lsusb | awk '/04b4:bd30/ { bt_found=1 }
+			/04b4:0bdc/ { wlan_found=1 }
+			END { exit(!bt_found || wlan_found) }'; do
+		echo "Wlan missing, trying to reset it... ($i/3)"
+		echo 1 > /sys/devices/platform/lwb5p-wlan-reset/reset/wlan_rst
+		[ "$i" -lt 3 ] || break
+		i=$((i+1))
+		sleep 5
+	done
+fi
+
+if [ -f /sys/class/leds/red/brightness ]; then
+    echo 0 > /sys/class/leds/red/brightness
+fi

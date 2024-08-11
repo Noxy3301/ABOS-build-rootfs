@@ -1,0 +1,5 @@
+# will be set to 0 on shutdown
+pwr_led=PWR_IND
+
+# will be set to max brightness on shutdown
+stdwn_led=STDWN_IND

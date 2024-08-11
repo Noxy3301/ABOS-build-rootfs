@@ -1,0 +1,2 @@
+/dev/root	/				ext4	ro,noatime			0 0
+tmpfs		/tmp				tmpfs	nosuid,nodev			0 0

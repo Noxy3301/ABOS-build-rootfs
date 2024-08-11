@@ -1,0 +1,40 @@
+
+altbootcmd=log rec none warning "" 0 altbootcmd "Counted $bootlimit consecutive unfinished boots"; run rollback
+apply_fit_overlays=for overlay in ${fdt_overlays}; do echo "Appending overlay ${overlay}"; fitconf="${fitconf}#${overlay}"; done; setenv fdt_overlays
+apply_overlays=for overlay in ${fdt_overlays}; do if load mmc ${mmcdev}:${mmcpart} ${overlay_addr} /boot/${overlay}; then echo "Applying fdt overlay: ${overlay}"; fdt apply ${overlay_addr}; else echo "Warning: fdt overlay ${overlay} not found!"; fi; done; setenv fdt_overlays
+baudrate=115200
+boot_fit=try
+bootcmd=mmc dev ${mmcdev}; sleep 0.5; if mmc rescan; then run update_encrypted_boot; if run loadbootscript; then run bootscript; else run loadimage && run mmcboot; fi; run rollback; fi;
+bootdelay=2
+bootlimit=3
+bootscript=echo Running bootscript from mmc ...; source; log rec none warning "" 0 bootscript "boot script did not boot"
+console=ttymxc1,115200
+ethprime=eth0
+fdt_addr=0x45000000
+fdt_file=boot/armadillo.dtb
+fdt_size=0x20000
+fitconf_base=#armadillo
+image=boot/Image
+load_overlays_list=load mmc ${mmcdev}:${mmcpart} ${overlay_addr} ${overlays_list} && env import -t ${overlay_addr} ${filesize}
+loadaddr=0x40480000
+loadbootscript=load mmc ${mmcdev}:${mmcpart} ${loadaddr} ${script};
+loadfdt=if load mmc ${mmcdev}:${mmcpart} ${fdt_addr} ${fdt_file}; then echo "Loading fdt ${fdt_file}" && fdt addr ${fdt_addr} && fdt resize ${fdt_size}; else log rec none warning "" 0 loadfdt "Could not load fdt file!"; false; fi
+loadimage=load mmc ${mmcdev}:${mmcpart} ${loadaddr} ${image} || run loadimage_mmcboot
+loadimage_mmcboot=if mmc dev ${mmcdev} ${mmcpart} && mmc read ${loadaddr} 0x2800 0xc800 && mmc dev ${mmcdev} 0 && iminfo quiet; then boot_fit=yes; else log rec none warning "" 0 loadimage "Could not load linux image!"; false; fi
+mmcargs=setenv bootargs console=${console} root=${mmcroot} ${optargs}
+mmcautodetect=yes
+mmcboot=echo Booting from mmc ...; run mmcargs; if test ${boot_fit} = yes || test ${boot_fit} = try && iminfo quiet; then run apply_fit_overlays; run load_overlays_list && run apply_fit_overlays; bootm ${loadaddr}"${fitconf_base}${fitconf}"; log rec none warning "" 0 mmcboot "Could not boot fit image"; elif run loadfdt; then run apply_overlays; run load_overlays_list && run apply_overlays; booti ${loadaddr} - ${fdt_addr}; log rec none warning "" 0 mmcboot "Could not boot image"; fi
+mmcdev=2
+mmcpart=1
+mmcroot=/dev/mmcblk2p1 rootwait rw
+optargs=quiet nokaslr
+overlay_addr=0x45020000
+overlays_list=boot/overlays.txt
+rollback=setenv bootcount; if test "${upgrade_available}" -gt 0 && run setfallback; then log rec none warning "" 0 rollback "Rolling back to mmcblk${mmcdev}p${fallback}"; if test "${mmcdev}" = 2; then run rollback_mmc; else run rollback_other; fi; elif test "${upgrade_available}" -gt 0; then log rec none warning "" 0 rollback "Cannot compute rollback target from mmcpart ${mmcpart}"; else log rec none warning "" 0 rollback "Rollback target is not ready, refusing to rollback."; fi; saveenv; reset
+rollback_mmc=test -z "${dek_spl_offset}" && saveenv && mmc partconf 2 0 ${fallback} 0 && reset
+rollback_other=setenv mmcpart "${fallback}"; setenv mmcroot "mmcblk${mmcdev}p${fallback} rootwait ro"; saveenv; reset
+script=boot/boot.scr
+setfallback=setexpr fallback 3 - ${mmcpart}; test "${fallback}" = 1 || test "${fallback}" = 2
+timeoffset=32400
+update_encrypted_boot=test "${encrypted_update_available}" = 1 && setenv encrypted_update_available && saveenv && test -n "${dek_spl_offset}" && test -n "${dek_fit_offset}" && run setfallback && log rec none warning "" 0 update_encrypted_boot "Writing encrypted boot to mmcblk2boot${fallback}" && if mmc dev 2 ${fallback} && mmc read 0x40500000 0 0x2000 && setexpr offset 0x40500000 + ${dek_spl_offset} && cp ${offset} 0x40400000 8 && dek_blob 0x40400000 ${offset} 256 && setexpr offset 0x40500000 + ${dek_fit_offset} && cp ${offset} 0x40402000 8 && dek_blob 0x40402000 ${offset} 256 && mmc write 0x40500000 0 0x2000 && setenv upgrade_available 1 && setenv dek_spl_offset && setenv dek_fit_offset; then run rollback_mmc; else log rec none warning "" 0 update_encrypted_boot "Flashing new boot image failed!!"; fi
+upgrade_available=1

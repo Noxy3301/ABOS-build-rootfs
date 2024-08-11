@@ -1,0 +1,10 @@
+# Armadillo 640 has two bluetooth devices, block the ZEPHYR one by default.
+#
+# To select the other device, create /etc/udev/rules.d/80-bluetooth.rules
+# with the same rule, replacing vendor/product with 04b4/640c
+# Device can also be temporarily re-allowed with the folowing command:
+# echo 1 > /sys/bus/usb/devices/2-1.2/authorized
+
+ACTION=="add", SUBSYSTEM=="usb", DRIVER=="usb", \
+    ATTRS{idVendor}=="2fe3", ATTRS{idProduct}=="000b", ATTR{authorized}="0"
+

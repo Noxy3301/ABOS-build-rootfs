@@ -1,0 +1,5 @@
+# workaround ppp unable to get a lock
+# https://gitlab.alpinelinux.org/alpine/aports/-/issues/15145
+start_pre() {
+    mkdir -p /run/ppp/lock
+}

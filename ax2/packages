@@ -1,0 +1,11 @@
+# linux-at is not available on all arches
+
+linux-at-x2@atmark
+
+# wifi firwmares
+wireless-regdb
+linux-firmware-nxpwifi-9098
+
+# encryped boot
+cryptsetup
+caam-decrypt

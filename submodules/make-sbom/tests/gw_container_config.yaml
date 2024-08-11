@@ -1,0 +1,15 @@
+Document:
+    documentNamespace:  https://armadillo.atmark-techno.com/files/downloads/armadillo-iot-a6e/image/a6e-gw-container-2.5.2.swu.spdx.json
+    creators:
+    - Organization: Atmark Techno
+
+Package:
+    mainPackage:
+        downloadLocation: https://armadillo.atmark-techno.com/files/downloads/armadillo-iot-a6e/image/a6e-gw-container-2.5.2.swu
+        version: 2.5.2
+        creators:
+            - Organization: Atmark Techno
+        copyrightText: Copyright 2024 Atmark Techno
+
+    alpine:
+        version: 3.19

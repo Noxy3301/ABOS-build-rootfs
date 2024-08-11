@@ -1,0 +1,98 @@
+#!/bin/sh
+# SPDX-License-Identifier: MIT
+
+set -e
+
+ATMARK_VER="$1"
+if [ -n "$ATMARK_VER" ]; then
+	ALPINE_VER=$(cat /etc/alpine-release)
+	# remove suffixes like _alpha20220715 from ALPINE_VER
+	echo "${ALPINE_VER%_*}-${ATMARK_VER}" > /etc/atmark-release
+fi
+
+# these files must only be installed on first install
+rm -f /etc/fstab /etc/motd /etc/hostname
+
+# remove duplicate motd by fixing pam session, until fixed upstream:
+# https://gitlab.alpinelinux.org/alpine/aports/-/issues/13958
+sed -i -e '/pam_motd/d' /etc/pam.d/base-session
+
+# /opt/firmware cannot be owned by packages, create it here
+mkdir /opt/firmware
+
+# also create empty config directories for users
+mkdir -p /etc/chrony/conf.d /etc/ssh/sshd_config.d
+
+# machine-id is created in rootfs but we do not want one
+rm -f /etc/machine-id
+
+# move hostapd config out of the way:
+# we want to keep user config if one exists instead.
+mv /etc/hostapd/hostapd.conf /etc/hostapd/hostapd.conf.example_full
+
+# alpine does not support modules autoloading through static dev
+# nodes, pre-create a few manually.
+sed -i -e 's@Seed /dev with some things.*@&\
+	[ -e /dev/autofs ] || mknod -m 0644 /dev/autofs c 10 235\
+	[ -e /dev/fuse ] || mknod -m 0666 /dev/fuse c 10 229\
+	[ -e /dev/cuse ] || mknod -m 0600 /dev/cuse c 10 203\
+	[ -e /dev/loop-control ] || mknod -m 0660 /dev/loop-control c 10 237\
+	[ -e /dev/uinput ] || mknod -m 0600 /dev/uinput c 10 223\
+	chown root:disk /dev/loop-control@' /etc/init.d/devfs
+
+# make sshd include configs in subdir
+cat >> /etc/ssh/sshd_config <<'EOF'
+# motd is printed by profile script on ABOS
+PrintMotd no
+
+# Use subdirectory for customizing config
+Include /etc/ssh/sshd_config.d/*.conf
+EOF
+
+# make tzdata smaller by removing the "right", TAI timezones.
+# package will be split in alpine 3.20 and this will no longer be required:
+# https://gitlab.alpinelinux.org/alpine/aports/-/issues/15763
+rm -rf /usr/share/zoneinfo/right
+
+# enable openrc parallel startup
+sed -i -e 's/^#\?rc_parallel=.*/rc_parallel="YES"/' /etc/rc.conf
+
+adduser -s /bin/ash -D atmark
+usermod -v 100000-165535 -w 100000-165535 atmark
+gpasswd -a atmark audio
+gpasswd -a atmark floppy
+gpasswd -a atmark video
+passwd -l atmark
+
+passwd -d -e root # remove lock and expire root password immediately
+
+rc-update add cgroups		sysinit
+rc-update add cryptsetup	sysinit
+rc-update add devfs		sysinit
+rc-update add fsck_atlog	sysinit
+rc-update add osclock		sysinit
+rc-update add overlayfs		sysinit
+rc-update add sysfs		sysinit
+rc-update add udev		sysinit
+rc-update add localmount	sysinit
+
+rc-update add bootmisc		boot
+rc-update add dnsmasq		boot
+rc-update add hostname		boot
+rc-update add klogd		boot
+rc-update add networkmanager	boot
+rc-update add sysctl		boot
+rc-update add syslog		boot
+rc-update add udev-trigger	boot
+
+rc-update add abos-web		default
+rc-update add buttond		default
+rc-update add chronyd		default
+rc-update add local		default
+rc-update add podman-atmark	default
+rc-update add reset_bootcount	default
+rc-update add zramswap		default
+
+rc-update add indicator_signals	shutdown
+rc-update add killprocs		shutdown
+rc-update add mount-ro		shutdown

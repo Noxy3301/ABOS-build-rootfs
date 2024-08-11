@@ -1,0 +1,21 @@
+# SPDX-License-Identifier: MIT
+
+# mandatory first IP to allocate, inclusive
+START_IP=10.3.4.2
+
+# mandatory last IP to allocate, inclusive
+END_IP=10.3.4.249
+
+# netmask to use for the IP, default to 24
+#NETMASK=24
+
+# Gateway to configure
+# not set if absent
+GATEWAY=10.3.4.1
+
+# DNS servers to configure if present, semi-colon separated list
+# not set if absent
+DNS="1.1.1.1;8.8.8.8"
+
+# interface to configure, default to eth0
+#IFACE=eth0

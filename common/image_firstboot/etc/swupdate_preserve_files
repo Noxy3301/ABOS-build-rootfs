@@ -1,0 +1,91 @@
+### Files listed here will be copied over when rootfs is updated
+### You can freely add or remove files from the list, removed
+### entries will not be added back as long as the below line is
+### kept intact. Do not remove or change!
+PRESERVE_FILES_VERSION 12
+
+# file can be prefixed with POST to be copied after rootfs is
+# extracted, e.g.
+#POST /boot
+# would preserve the installed kernel without rebuilding a custom
+# image if uncommented (destination is removed before copy)
+
+# v1 list: base files, swupdate, ssh and network config
+/etc/atmark
+/etc/fstab
+/etc/motd
+/etc/conf.d/overlayfs
+/etc/swupdate_preserve_files
+
+/etc/hwrevision
+/etc/swupdate.cfg
+/etc/swupdate.pem
+/etc/swupdate.aes-key
+/etc/runlevels/default/swupdate-hawkbit
+/etc/conf.d/swupdate-hawkbit
+/etc/runlevels/default/swupdate-url
+/etc/conf.d/swupdate-url
+/etc/swupdate.watch
+
+/etc/runlevels/default/sshd
+/etc/ssh
+/root/.ssh
+/home/atmark/.ssh
+
+/etc/hostname
+/etc/network
+/etc/resolv.conf
+/etc/NetworkManager/system-connections
+
+# v2 list: dtb symlink, ca-certificates, local.d
+/boot/armadillo.dtb
+/usr/local/share/ca-certificates
+/etc/local.d
+
+# v3 list: DTS overlay, LTE extension board support
+/boot/overlays.txt
+/etc/runlevels/default/modemmanager
+/etc/runlevels/default/connection-recover
+
+# v4 list: iptables, some /etc/x.d directories
+/etc/dnsmasq.d
+/etc/sysctl.d
+/etc/hostapd/hostapd.conf
+/etc/iptables/rules-save
+/etc/iptables/rules6-save
+/etc/runlevels/default/hostapd
+/etc/runlevels/default/iptables
+/etc/runlevels/default/ip6tables
+
+# v5 list: uboot env, machine-id
+/boot/uboot_env.d
+/etc/machine-id
+
+# v6 list: g4/a6e LTE/wifi extension board support, atmark conf.d files
+/etc/runlevels/boot/modemmanager
+/etc/runlevels/boot/ems31-boot
+/etc/runlevels/default/wwan-led
+/etc/runlevels/shutdown/wwan-safe-poweroff
+/etc/runlevels/default/wifi-recover
+POST /etc/conf.d/wifi-recover
+POST /etc/conf.d/podman-atmark
+
+# v7 list: a6e power-utils files
+/etc/containers/aiot_gw_container_hooks.d
+
+# v8 list: udev rules
+/etc/udev/rules.d
+
+# v9 list: avahi service
+/etc/runlevels/default/avahi-daemon
+
+# v10 list: chown abos-web directory
+CHOWN abos-web-admin: /etc/atmark/abos_web
+
+# v11 list: chrony config
+/etc/chrony/conf.d
+
+# v12 list: timezone settings/twin agent enable state
+/etc/localtime
+/etc/zoneinfo
+/etc/runlevels/default/armadillo-twin-agentd

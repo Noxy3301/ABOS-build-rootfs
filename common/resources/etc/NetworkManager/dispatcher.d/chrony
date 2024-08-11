@@ -1,0 +1,16 @@
+#!/bin/sh
+
+case "$2" in
+up|vpn-up)
+	for ntp in $DHCP4_NTP_SERVERS $DHCP6_NTP_SERVERS; do
+		chronyc add server "$ntp" iburst >/dev/null
+	done
+	chronyc onoffline >/dev/null
+	;;
+down|vpn-down)
+	chronyc onoffline >/dev/null
+	;;
+esac
+
+# ignore any error (such as chrony not being started)
+true

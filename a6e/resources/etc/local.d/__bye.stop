@@ -1,0 +1,6 @@
+#!/bin/sh
+
+cd /sys/class/leds/sys && \
+echo timer > trigger && echo 888 | tee delay_on > delay_off
+
+sleep 120 && pkill -f "/sbin/openrc shutdown" &

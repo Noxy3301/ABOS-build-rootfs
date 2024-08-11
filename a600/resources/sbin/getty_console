@@ -1,0 +1,13 @@
+#!/bin/sh
+
+get_console() {
+    sed -e 's/.*console=\(ttymxc[0-9]\).*/\1/g' "$1"
+}
+
+console="$(get_console /proc/cmdline)"
+case "$console" in
+ttymxc[0-9]) : "nothing to do" ;;
+*) console=ttymxc0 ;;
+esac
+
+exec /sbin/getty -L 115200 $console vt102

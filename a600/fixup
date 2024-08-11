@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: MIT
+# Commands in this file are executed after common/fixup
+
+rc-update add micron-emmc-reten        boot
+
+# remove dtbo for a6e board
+rm -f /boot/armadillo-iotg-a6e-*dtb*

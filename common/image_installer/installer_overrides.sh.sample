@@ -1,0 +1,186 @@
+# SPDX-License-Identifier: MIT
+
+# This is an example override script for Armadillo Base OS installer
+# Rename this script to /install_overrides.sh in either the SD
+# card root or the second partition to enable
+# (second partition has priority if both exist)
+
+# This script allows overriding these three empty functions:
+#  - preinstall
+#  - postinstall
+#  - send_log (called with log file arguments)
+
+# Note it is also possible to add any swu in either partitions
+# they will be installed (in alpha order, swus in user partition
+# mask the ones in root one)
+
+# Available environment variables/functions:
+#  - $SN: armadillo serial number, e.g. 00C900010169
+#  - $USER_MOUNT: mount path of windows sd partition if mounted
+#  - $REBOOT: set to empty if powering off or
+#             'rebooting' to reboot after sending logs.
+#             Can be overwritten at any step
+#  - $RESULT: (send_log only) either OK or NG depending on success
+#  - error: print a message, send NG logs and stop
+
+preinstall() {
+	: "Preinstall function, run before eMMC is partitionned"
+
+	# If network is required uncomment the following
+	# ( ip link set eth0 up; udcpc; ) &
+}
+
+postinstall() {
+	: "Postinstall function, run after all other steps except sending logs"
+	# At this point, the system is still mounted in /target,
+	# volume submounts have been done and second partition
+	# is mounted to $USER_MOUNT if it exists
+	
+	# This example script will:
+	#  - check for SD card windows partition, or make / read-write
+	#  - check for 'ip_config.txt' file which should contain the
+	#    following settings (see examples ip_config.txt.sample for example):
+	#    - START_IP: mandatory first IP to allocate, inclusive
+	#    - END_IP: mandatory last IP to allocate, inclusive
+	#    - NETMASK: netmask to use for the IP, default to 24
+	#    - GATEWAY: gateway to set if present
+	#    - DNS: DNS servers to configure if present, semi-colon separated list
+	#    - IFACE: interface to use, default to eth0
+	#  - allocate an IP and remember SN and MAC in 'allocated_ips.csv'
+	#  - configure static IP address from it
+	if [ -z "$USER_MOUNT" ] && ! mount -o remount,rw /; then
+		error "SD card secondary windows partition does not exist and could not make / read-write"
+	fi
+
+	if ! [ -e "$USER_MOUNT/ip_config.txt" ]; then
+		echo "No ip_config.txt file on SD card partitions, skipping"
+		return
+	fi
+
+	# remove carriage returns if present
+	if grep -q '\r' "$USER_MOUNT/ip_config.txt"; then
+		dos2unix "$USER_MOUNT/ip_config.txt"
+	fi
+
+	# IP address manipulation helpers
+	inet_aton() {
+		local IP="$1" a b c d
+		local IFS="."
+		echo "$IP" | (
+			read -r a b c d || exit 1
+			[ -n "$d" ] || exit 1
+			echo $(( ((( a * 256 ) + b ) * 256 + c ) * 256 + d ))
+		)
+	}
+	inet_ntoa() {
+		local IP="$1" a b c d
+		d=$((IP % 256))
+		IP=$((IP / 256))
+		c=$((IP % 256))
+		IP=$((IP / 256))
+		b=$((IP % 256))
+		a=$((IP / 256))
+		echo "$a.$b.$c.$d"
+	}
+
+	local START_IP="" END_IP="" NETMASK="" IP
+	local GATEWAY="" DNS="" IFACE=eth0
+	. "$USER_MOUNT/ip_config.txt"
+
+	# convert to integer and check validity
+	IP=$(inet_aton "$START_IP") \
+		|| error "Bad START_IP $START_IP in ip_config.txt"
+	START_IP="$IP"
+	IP=$(inet_aton "$END_IP") \
+		|| error "Bad END_IP $END_IP in ip_config.txt"
+	END_IP="$IP"
+	if [ "$START_IP" -gt "$END_IP" ]; then
+		error "START_IP is after END_IP!"
+	fi
+
+	# get MAC address
+	local MAC
+	MAC=$(ip link show dev "$IFACE" | awk '/ether/ { print $2 }')
+	[ -n "$MAC" ] || error "Could not get $IFACE MAC address"
+
+	# get first free IP and log used IP
+	IP=""
+	if grep -qE "^$SN," "$USER_MOUNT/allocated_ips.csv" 2>/dev/null; then
+		# try to reuse same IP if already set
+		IP=$(awk -F, -v SN="$SN" '$1 == SN { print $3 }' < "$USER_MOUNT/allocated_ips.csv")
+		if [ -z "$IP" ]; then
+			error "Found SN $SN in allocated_ips.csv but it has no IP?"
+		fi
+	elif [ -e "$USER_MOUNT/allocated_ips.csv" ]; then
+		IP=$(tail -n 1 < "$USER_MOUNT/allocated_ips.csv") \
+			|| error "allocated_ips.csv exists but could not read it"
+		# only keep the IP part and convert to int, increment and log
+		IP=${IP##*,}
+		IP=$(inet_aton "$IP") \
+			|| error "Invalid IP in last line of allocated_ips.csv, please check"
+		IP=$((IP+1))
+		if [ "$IP" -gt "$END_IP" ]; then
+			error "Allocated all available IPs, aborting"
+		fi
+		IP=$(inet_ntoa "$IP")
+		echo "$SN,$MAC,$IP" >> "$USER_MOUNT/allocated_ips.csv" \
+			|| "Could not append to allocated_ips.csv"
+	else
+		# take first IP and log
+		echo "SN,MAC,IP" > "$USER_MOUNT/allocated_ips.csv" \
+			|| error "Could not write to allocated_ips.csv"
+		IP=$(inet_ntoa "$START_IP")
+		echo "$SN,$MAC,$IP" >> "$USER_MOUNT/allocated_ips.csv" \
+			|| "Could not append to allocated_ips.csv"
+	fi
+
+	# convert back to string representation and prepare variables
+	# for networkmanager config file
+	local extra_line="" uuid
+	IP="$IP/${NETMASK:-24}"
+	if [ -n "$GATEWAY" ]; then
+		IP="$IP,$GATEWAY"
+	fi
+	if [ -n "$DNS" ]; then
+		extra_line="$extra_line
+dns=$DNS;"
+	fi
+	uuid=$(uuidgen)
+
+	# write connection file
+	local CONF_FILE="/target/etc/NetworkManager/system-connections/$IFACE.nmconnection"
+	cat > "$CONF_FILE" <<EOF || error "Could not write $CONF_FILE"
+[connection]
+id=$IFACE
+uuid=$uuid
+type=ethernet
+autoconnect-priority=-999
+interface-name=$IFACE
+
+[ethernet]
+
+[ipv4]
+address1=$IP$extra_line
+method=manual
+
+[ipv6]
+addr-gen-mode=stable-privacy
+method=auto
+
+[proxy]
+EOF
+
+	# NetworkManager does not read files with bad permissions
+	chmod 600 "$CONF_FILE" \
+		|| error "Could not chmod $CONF_FILE"
+}
+
+send_log() {
+	: "This function is called after aggregating logs for archival"
+	local LOG_FILE="$1"
+
+	# $LOG_FILE contains installation logs, and can for example
+	# be sent over http as follow
+	# (Note https requires time to be set, which is not guaranteed at this point)
+	#curl -X POST --data-binary @"$LOG_FILE" "http://..."
+}

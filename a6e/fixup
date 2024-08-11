@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: MIT
+
+# Commands in this file are executed after common/fixup
+
+rc-update add atmark-power-utils default
+
+# remove dtbo for a640/a610 board
+rm -f /boot/armadillo-610-*dtb* /boot/armadillo-640-*dtb*

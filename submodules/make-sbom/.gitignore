@@ -1,0 +1,9 @@
+*.json
+*.png
+*.swu
+requirements_visualize.txt
+tests/*.txt
+.ash_history
+__pycache__
+venv
+deps

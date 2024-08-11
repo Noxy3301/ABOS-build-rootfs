@@ -1,0 +1,36 @@
+# container build script for atmark alpine images
+
+Build containers with basic build tools installed and atmark repo configured:
+
+If using podman, you can run with:
+
+  $ DOCKER=podman ./build.sh
+
+
+## Note for foreign (armhf, aarch64 on x86_64) images
+
+docker needs to be able to run foreign binaries inside the container.
+
+This is normally done with automatically when the qemu-user-static
+package is installed, you can check with the following command:
+
+  $ sysctl fs.binfmt_misc.qemu-aarch64
+  fs.binfmt_misc.qemu-aarch64 = enabled
+  fs.binfmt_misc.qemu-aarch64 = interpreter /usr/libexec/qemu-binfmt/aarch64-binfmt-P
+  fs.binfmt_misc.qemu-aarch64 = flags: POCF
+  fs.binfmt_misc.qemu-aarch64 = offset 0
+  fs.binfmt_misc.qemu-aarch64 = magic 7f454c460201010000000000000000000200b700
+  fs.binfmt_misc.qemu-aarch64 = mask ffffffffffffff00fffffffffffffffffeffffff
+
+The interpreter can be somewhere else, but the file must exists.
+
+Flags are important, in particular 'F' is required to run binaries inside containers
+with a qemu-user binary on the host, and it needs to be adjusted (known issue on
+ubuntu 18.04).
+
+One-time fix for aarch64 and arm as follow (adjust qemu-user path):
+# cd /proc/sys/fs/binfmt_misc
+# echo -1 > qemu-arm
+# echo ':qemu-arm:M:0:\x7f\x45\x4c\x46\x01\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\x28\x00:\xff\xff\xff\xff\xff\xff\xff\x00\xff\xff\xff\xff\xff\xff\xff\xff\xfe\xff\xff\xff:/usr/libexec/qemu-binfmt/arm-binfmt-P:CPF' > register 
+# echo -1 > qemu-aarch64
+# echo ':qemu-aarch64:M:0:\x7f\x45\x4c\x46\x02\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00\x02\x00\xb7\x00:\xff\xff\xff\xff\xff\xff\xff\x00\xff\xff\xff\xff\xff\xff\xff\xff\xfe\xff\xff\xff:/usr/libexec/qemu-binfmt/aarch64-binfmt-P:CPF' > register

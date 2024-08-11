@@ -1,0 +1,4 @@
+# list of urls the swupdate-url service will regularily poll
+# This file is not used unless the swupdate-url service has been enabled
+https://download.atmark-techno.com/armadillo-iot-a6e/image/baseos-6e-latest.swu
+https://download.atmark-techno.com/armadillo-iot-a6e/image/a6e-gw-container-latest.swu

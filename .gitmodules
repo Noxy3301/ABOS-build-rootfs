@@ -1,0 +1,9 @@
+[submodule "alpine-make-rootfs"]
+	path = submodules/alpine-make-rootfs
+	url = https://github.com/alpinelinux/alpine-make-rootfs.git
+[submodule "submodules/containers"]
+	path = submodules/containers
+	url = git://sv-scm.atmark.tech/git/atmark/alpine/containers.git
+[submodule "submodules/make-sbom"]
+	path = submodules/make-sbom
+	url = git://sv-scm.atmark.tech/git/atmark/alpine/make-sbom.git/

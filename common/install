@@ -1,0 +1,8 @@
+#!/bin/sh -e
+# SPDX-License-Identifier: MIT
+
+echo "
+install all files in resources/"
+
+chown -R root: resources
+cp -a resources/. /

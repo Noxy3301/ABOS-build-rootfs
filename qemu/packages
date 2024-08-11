@@ -1,0 +1,5 @@
+# qemu kernel and syslinux for bootloader...
+# eventually switch to EFI ?
+
+linux-virt
+syslinux

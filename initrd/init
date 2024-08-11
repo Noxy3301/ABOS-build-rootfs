@@ -1,0 +1,119 @@
+#!/bin/sh
+# SPDX-License-Identifier: MIT
+
+# minimal init script:
+# - mount sys, proc, dev (does cryptsetup need it all?)
+# - mount rootfs
+# - pivot_root into it
+
+error() {
+	printf "%s\n" "$@" > /dev/kmsg
+	printf "%s\n" "$@"
+
+	if [ -e "/noshell" ]; then
+		echo "No shell allowed, rebooting now"
+		exec /bin/busybox reboot -nf
+	else
+		echo "Starting initramfs emergency recovery shell"
+		/bin/sh
+	fi
+}
+
+echo "Starting init"
+
+/bin/busybox mkdir -p /usr/bin /usr/sbin /proc /sys /dev /sysroot \
+	/tmp /run/cryptsetup
+
+# Spread out busybox symlinks and make them available without full path
+# for interactive shells
+/bin/busybox --install -s
+export PATH=/usr/bin:/bin:/usr/sbin:/sbin
+
+mount -t proc proc /proc \
+	|| error "Could not mount /proc"
+mount -t devtmpfs devtmpfs /dev \
+	|| error "Could not mount /dev"
+mount -t sysfs sysfs /sys \
+	|| error "Could not mount /sys"
+
+# supported options
+root=""
+init="/sbin/init"
+
+# shellcheck disable=SC2013 # we want word splitting
+for arg in $(cat /proc/cmdline); do
+	case "$arg" in
+	root=*) root="${arg#root=}";;
+	init=*) init="${arg#init=}";;
+	shell) error "Running shell, exit to continue boot";;
+	esac
+done
+
+while [ -z "$root" ] || ! [ -e "$root" ]; do
+	error "Could not find root= in cmdline or '$root' does not exist" \
+		"Will set from /root after exit"
+	root="$(cat /root)"
+done
+
+if [ -e /root_pattern ]; then
+	root_pattern=$(cat /root_pattern)
+	# shellcheck disable=SC2254 # we want $root_pattern to be a pattern
+	case "$root" in
+	$root_pattern) ;;
+	*) error "root=$root did not match $root_pattern, refusing to boot.";;
+	esac
+fi
+
+if ! [ "$(head -c 4 "$root" 2>/dev/null)" = LUKS ]; then
+	if [ -e /noplain ]; then
+		error "not allowed to boot a plain filesystem, refusing to boot."
+	fi
+else
+	command -v cryptsetup > /dev/null \
+		|| error "root filesystem is LUKS encrypted but cryptsetup is not available"
+	index=0
+	case "$root" in
+	/dev/mmcblk?p[1-2])
+		# keys are stored as follow
+		# 0MB        <GPT header and partition table>
+		# 9MB        key for part 1
+		# 9MB+4k     key for part 2
+		# 9MB+(n*4k) key for part n+1
+		# 10MB       first partition
+		index=${root##*p}
+		index=$((index-1))
+		offset=$(((9*1024 + index * 4)*1024))
+		dd if="${root%p*}" of=/key.mmc bs=4k count=1 status=none \
+				iflag=skip_bytes skip="$offset" \
+			|| error "Could not extract key to /key"
+		;;
+	*) error "LUKS only supported on mmcblk*p[1-2] root" ;;
+	esac
+        # key is:
+        # - 112 bytes of caam black key
+        # - 16 bytes of iv followed by rest of key
+	dd if=/key.mmc of=/key.bb bs=112 count=1 status=none \
+		|| error "Could not extract black key"
+	dd if=/key.mmc of=/key.enc bs=4k status=none \
+			iflag=skip_bytes skip=112 \
+		|| error "Could not extract encrypted key"
+	caam-decrypt /key.bb AES-256-CBC /key.enc /key.luks \
+		|| error "Could not decrypt luks key"
+	cryptsetup luksOpen --key-file /key.luks --allow-discards \
+			"$root" "rootfs_$index" \
+		|| error "Could not decrypt $root to rootfs_$index"
+	rm -f /key.*
+	root="/dev/mapper/rootfs_$index"
+fi
+
+
+mount -o ro "$root" /sysroot \
+	|| error "Could not mount $root to /sysroot"
+
+# system expects /dev already mounted, otherwise it
+# fails trying to write to /dev/null...
+mount -o move /dev /sysroot/dev
+mount -o move /sys /sysroot/sys
+mount -o move /proc /sysroot/proc
+
+exec /bin/busybox switch_root /sysroot "$init"

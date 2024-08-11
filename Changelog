@@ -1,0 +1,421 @@
+3.20-at.1
+=========
+- 3.20 upgrade
+- sbom: improve speed/output
+- installer: discard before installing
+- packages:
+ - emmc-sref moved in abos-base
+
+  -- 2024-07-24
+
+3.19-at.5
+=========
+- rollback rework (don't auto downgrade versions)
+- sbom: use syft for rootfs; this generates a sbom compatible with osv-scanner
+- docker: fix cache directory owner
+
+  -- 2024-06-26
+
+3.19-at.4
+=========
+- installer improvements & fixes:
+ - fix mounting user partition, this had stopped working in 3.18-at.5 with the
+removal of util-linux's mount command.
+ - everything printed to console is logged in /tmp/install.log (and sent to
+server if set); it is also logged to /var/log/messages of the installed system
+for immediate local checks
+ - verify that boot partition has been set properly immediately after having
+set it. kernels 5.10.210 and 5.10.213 had a bug where mmc commands would
+sometimes be ignored.
+- build_image: fix installer-set uboot env location (was not /boot/uboot_env.d)
+- make-sbom: update submodule to allow running syft
+
+  -- 2024-05-28
+
+3.19-at.3
+=========
+- a6e: error out when using SD boot on board with lwb5+
+- a640: enable lwb5plus dtbo automatically if present
+- a640: add workaround for when lwb5plus card is not detected
+- build_image: keep saved environment in /boot/uboot_env.d/ZZ_installer file
+- packages:
+ - swupdate upgrade with built-in locking, no longer killed by mkswu
+ - fsfreeze added to abos-base
+ - make-installer now flags sshd host keys for recreation
+
+  -- 2024-04-22
+
+3.19-at.2
+=========
+- NetworkManager: ignore podman interfaces
+- a6e: remove atinout (fix GPLv3 dependency)
+- improve build_initrd.sh --lock
+- packages:
+ - modemmanager 1.22
+ - swupdate+hawkbit fix (mostly for A6*)
+ - abos-web/se05x-tools licenses fix
+
+  -- 2024-03-26
+
+3.19-at.1
+=========
+- alpine 3.19 upgrade
+ - podman 4.8 db.sql support
+- first release with twin agent
+- support overriding timezone (manually for now)
+- installer: renegerate sshd keys if requested (unused in this version)
+
+  -- 2024-02-27
+
+3.18-at.10
+==========
+- g4: avoid duplicating HAS_OPT_FIRMWARE in baseos.conf on reinstall
+- make-installer --noprompt
+
+  -- 2024-01-29
+
+3.18-at.9
+=========
+- fix sbom release process
+- a600 only release fixing mkswu update corruptions on old MMCs
+
+  -- 2024-01-12
+
+3.18-at.8
+=========
+- fix abos-web 設定管理 page
+- abos-web REST API
+
+  -- 2023-12-28
+
+3.18-at.7
+=========
+- build sbom by default when building rootfs/images
+- add device-info
+
+  -- 2023-12-26
+
+3.18-at.6
+=========
+- build_rootfs: prefer podman over docker if both available
+- sd boot: replace openrc firstboot script with /sbin/init (like installer)
+- Add make-sbom
+
+  -- 2023-11-28
+
+3.18-at.5
+=========
+- First release without gpl3 dependencies
+- move system chronyd config to /lib/chrony.conf.d and leave
+/etc/chrony/conf.d for users
+- pre-create empty /etc/ssh/sshd_config.d directory
+
+  -- 2023-10-30
+
+3.18-at.4
+=========
+- update containers submodule to allow building distcc container with
+alpine 3.18
+- use --alpine-version for atmark repo to fix building older alpine
+releases
+- include /etc/ssh/sshd_config.d/*.conf in sshd config
+- add SPDX license identifiers and LICENSE file
+- fix installer behaviour in case of failure: resume boot process
+through openrc instead of looping into installer.
+
+  -- 2023-09-27
+
+3.18-at.3
+=========
+- alpine-make-rootfs submodule update
+- mostly just package updates
+
+  -- 2023-08-29
+
+3.18-at.2
+=========
+- new release for kernel update
+- a600: remove a610-onboard-usdhc2.dtbo as it was removed in kernel
+
+  -- 2023-08-09
+
+3.18-at.1
+=========
+- first alpine 3.18 release
+- ax2/a6e: add wifi firmware (was removed from kernel defconfig)
+- common: enable fsck_atlog inconditionally (checks /var/log)
+- common: swupdate_preserve_files: add abos-web CHOWN rule
+- common: installer: write uboot env after fixing fw_env.conf
+(fixes initial env values on make-installer-generated installer,
+mostly for a640 which needs to record the console)
+- common: workaround pppd runtime directory change by creating
+it before nm starts
+
+  -- 2023-07-31
+
+3.17-at.9
+=========
+release for A6E with Di8+Ai4
+
+a6e:
+ - add power-alertd, ain-utils packages
+ - update uboot env
+
+  -- 2023-07-11
+
+3.17-at.8
+=========
+Release for ModemManager package revert. ModemManager is downgraded back
+to its state as of ABOS 3.17.3-at.5 (MM 1.20.2-r101 is identical to r99)
+
+There is on other change (besides alpine side updates)
+
+  -- 2023-07-05
+
+3.17-at.7
+=========
+Officially support a640/a610
+
+common:
+ - packages: add abos-web/avahi
+ - service: enable avahi on installer, abos-web always (auto-disables)
+ - installer:
+   - support installing SWUs from /installer_swus as well as /
+   - set uboot env in installer image, effectively disabling
+     bootcount/rollback
+   - shellcheck fixes
+   - improve output during install
+ - update uboot envs
+
+a6e:
+ - rename kernel to linux-at-a6
+ - do not install cryptsetup/caam-decrypt packages
+
+a600:
+ - rename from a640 (never released)
+ - adjust led for 610
+ - add eMMC micron retention service
+ - installer: add con3 installer
+
+  -- 2023-06-28
+
+3.17-at.6
+=========
+common installer: fix bootcount variable not being reset due to invalid
+fw_env.config in installer image
+
+  -- 2023-05-29
+
+3.17-at.5
+=========
+common:
+- fw_env.config: write the file dynamically at install time
+- Add --cache support to build offline or tested release.
+The cache will be published to d.a.c together with the rootfs.
+- The archive built from cache is now reproducible.
+- NetworkManager: change how we mark interfaces as disabled.
+The new method allows overriding at runtime more easily, and is
+more flexible when wanting to add more such interfaces.
+- update swupdate_preserve_rules (udev rules)
+- fix motd being printed at boot
+- rework mount options used everywhere: some mounts were not using
+noatime, btrfs for rootfs should use compress-force.
+
+a6e:
+- fix installing uboot image when padding was not present.
+The padding is required when writing to mmcblkXbootY as well.
+
+qemu:
+- fix broken pieces; since we're not using uboot it's not perfect
+but it's good enough for basic tests.
+
+internal notes:
+- add jenkins/ directory that isn't included in release tarball
+- temporarily hide a640: will be reverted immediately after release.
+
+  -- 2023-04-26
+
+3.17-at.4
+=========
+common:
+ - use shadow-login instead of util-linux-login
+ - installer: remember if fw was written in /etc/atmark/baseos.conf
+
+ax2:
+ - add nokaslr to default optargs
+
+a6e:
+ - add swupdate.watch, so each board can have their own URL
+(ax2 still uses g4's, but the image is identical so that can be postponed)
+ - handle boot image with and without 1kb pad
+
+  -- 2023-03-28
+
+3.17-at.3
+=========
+ax2:
+ - remove wifi firmware
+common:
+ - remove double-hook on dnsmasq startup
+ - disable and uninstall rngd, it is no longer needed on recent kernels
+and slows down A6E boot too much
+ - minor script improvements
+
+  -- 2023-02-24
+
+3.17-at.2
+=========
+a6e:
+ - workaround openrc rare hang on shutdown/reboot
+common:
+ - containers.conf: limit max log size by default
+
+  -- 2023-01-26
+
+3.17-at.1
+=========
+- update to alpine 3.17
+common:
+ - swupdate_preserve_files: add files for a6e
+
+  -- 2023-01-19
+
+3.16-at.7
+=========
+g4:
+ - installer: add wwan-safe-poweroff service
+ - installer: delete modemmanager service
+a6e:
+ - installer: add wwan-safe-poweroff service
+ - installer: add LAN model
+ - installer: add product id warning
+ - disable verbose kernel log
+common:
+ - swupdate_preserve_files: add files for LTE model and for
+   wifi-recover
+
+  -- 2022-12-23
+
+3.16-at.6
+=========
+g4:
+ - add Armadillo-X2 hwrevision
+ - add overlay for aw-xm458 WLAN card
+a6e:
+ - cleanup some of the initial release kludges
+common:
+ - installer: add enable_overlay helper and robustify reinstalls
+ - installer: fix reinstall with enabled child boards
+ - installer: fix hwrevision on unknown boards (check in manufacturing
+script)
+ - installer: unlock gp0 partition if required
+ - installer: make slightly smaller to fix old abos-ctrl make-installer
+ - sd card boot: fix firstboot
+ - add hostapd
+
+  -- 2022-11-24
+
+3.16-at.5
+=========
+g4:
+- uboot default env update
+a6e:
+- initial install support
+common:
+- add swu installation support to installer
+- fix at-log not being properly mounted by installer
+- move atmark containers example files to abos-package
+
+  -- 2022-10-25
+
+3.16-at.4
+=========
+- openssl requires tls1.2+
+- A6E fixes or adjustments (not yet ready)
+
+  -- 2022-09-28
+
+3.16-at.3
+=========
+- installer: fix spurious failures on long installs
+- fix machine-id being common to all rootfs
+- enabled klogd
+- enable zramswap
+- disable urandom
+
+  -- 2022-08-29
+
+3.16-at.2
+=========
+- split files in common/ax2 dir, including install scripts
+- use port 153 for podman dns, and simplify dnsmasq config thanks to it
+- ax2: add default uboot env
+
+  -- 2022-07-27
+
+3.16-at.1
+=========
+- first 3.16 release:
+  * podman 4
+  * networkmanager update/package split/fixes
+- add dnsmasq resolver
+- remove /lib/firmware
+- add libgpiod / se05x-tools / iw
+- add second atmark signing certificates
+- enable sysctl service
+- installer improvements:
+  * overrides support with static ip example
+  * minor fixes
+- adjust swupdate.cfg loglevel for new version (we need info)
+- lock atmark user
+- add defaults swupdate_preserve_files file to install image
+
+  -- 2022-06-27
+
+3.15-at.7
+=========
+installer encryption support
+installer checksum to xxh
+installer support for appfs (make-image)
+initrd for encrypted rootfs
+openrc: switch to cgroup v2 (unified)
+... and for fixup revert that cgroup v2 switch
+
+  -- 2022-05-27
+
+3.15-at.6
+=========
+- add example container.conf
+- add chattr
+- fix cni-plugins bug when using LTE modem
+- mostly just update packages
+- move /var/log/rc.log to /run/openrc/rc.log
+- grow /var/log/messages to 4MB
+
+  -- 2022-04-26
+
+3.15-at.5
+=========
+LTE release
+
+  -- 2022-04-08
+
+3.15-at.4
+=========
+  -- 2022-03-28
+
+3.15-at.3
+=========
+  -- 2022-02-21
+
+3.15-at.2
+=========
+  -- 2022-01-27
+
+3.15-at.1
+=========
+  -- 2021-12-22
+
+3.14-at.2
+=========
+  -- 2021-12-03

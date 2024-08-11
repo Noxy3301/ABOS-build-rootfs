@@ -1,0 +1,7 @@
+/dev/root	/				ext4	ro,noatime			0 0
+tmpfs		/tmp				tmpfs	nosuid,nodev			0 0
+{DISKPART}3	/var/log			ext4	defaults,noatime		0 0
+{DISKPART}5	/var/lib/containers/storage_readonly	btrfs	compress=zstd,discard=async,noatime,subvol=boot_0/containers_storage	0 0
+{DISKPART}5	/var/app/rollback/volumes		btrfs	compress=zstd,discard=async,noatime,subvol=boot_0/volumes		0 0
+{DISKPART}5	/var/app/volumes		btrfs	compress=zstd,discard=async,noatime,subvol=volumes		0 0
+{DISKPART}5	/var/tmp			btrfs	compress=zstd,discard=async,noatime,subvol=tmp			0 0

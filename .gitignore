@@ -1,0 +1,4 @@
+/footprint.csv
+/*.spdx.json
+/*.tar*
+/.release_epoch

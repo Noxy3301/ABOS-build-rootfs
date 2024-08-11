@@ -1,0 +1,11 @@
+# arguments in BUTTOND_ARGS are passed as is to buttond
+# for Armaillo Base OS we also load config in /etc/atmark/buttond.conf
+# for easier override
+
+BUTTOND_ARGS="/dev/input/by-path/platform-gpio-keys-event"
+BUTTOND_ARGS="$BUTTOND_ARGS -l power -t 3000 -a poweroff"
+BUTTOND_ARGS="$BUTTOND_ARGS -l restart -t 3000 -a reboot"
+
+if [ -e "/etc/atmark/buttond.conf" ]; then
+	. /etc/atmark/buttond.conf
+fi

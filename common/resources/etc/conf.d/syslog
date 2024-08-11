@@ -1,0 +1,1 @@
+SYSLOGD_OPTS="-t -s 4096"

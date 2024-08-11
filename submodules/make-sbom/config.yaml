@@ -1,0 +1,41 @@
+# OS_update.swu の SBOM を作成する場合を例とします
+# SBOM の記載ルールの詳細は以下の URL を参照してください
+# https://spdx.github.io/spdx-spec/v2.2.2/
+
+# Document には SBOM 自体の説明を記載します
+Document:
+  # documentNamespace は SBOM の URI です
+  # ダウンロード可能であることは必須ではありませんが、
+  # バージョンが変わった場合は URI を更新する必要があります
+  # 詳しくは下記 URL を参照してください
+  # https://spdx.github.io/spdx-spec/v2.2.2/document-creation-information/#65-spdx-document-namespace-field
+  documentNamespace: https://spdx.org/spdxdocs/OS_update.swu.spdx.json-630261ab-2d9b-4e80-abe1-e6e1a8d6f4aa
+  # creators は以下の key と value の組み合わせから選ぶことができます
+  # - Organization: <組織名>
+  # - Person: <人名>
+  # - Tool: <ツール名>
+  creators:
+    - Organization: Atmark Techno
+
+# Document に含まれるパッケージ情報について記載します
+Package:
+    # mainPackage は SBOM を作成する対象のファイル(OS_update.swu)について記載します
+    mainPackage:
+      downloadLocation: https://spdx.org/spdxdocs/OS_update.swu
+      version: 1
+      creators:
+        - Organization: Atmark Techno
+      # ライセンス名は SPDX License List (https://spdx.org/licenses/) に登録されている必要があり、
+      # 複数のライセンスを選択する場合は下記 URL の SPDX license expressions のルールに従う必要があります
+      # licenseConcluded および licenseDeclared が記載されていない場合は SBOM では NOASSERTION となります
+      licenseConcluded: GPL-2.0
+      licenseDeclared: GPL-2.0
+      copyrightText: Copyright 2023 Atmark Techno
+
+    # 必要な場合は続けて Package の情報を書くことができます
+    # mainPackage の 先祖 (Ancestor of) の関係として記載されます
+    # u-boot-imx:
+    #   version: v2020.04
+    #   licenseConcluded: GPL-2.0
+    #   licenseDeclared: GPL-2.0
+    #   copyrightText: (C) Copyright 2000 - 2013 Wolfgang Denk, DENX Software Engineering, wd@denx.de.

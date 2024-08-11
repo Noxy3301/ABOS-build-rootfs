@@ -1,0 +1,4 @@
+# init scripts see they're using the fs and also refuse
+# to remount read-only even if it'd work: for now just
+# skip the mountpoint to silence the error
+no_umounts="/live/rootfs:/live"

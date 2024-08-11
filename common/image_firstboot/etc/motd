@@ -1,0 +1,12 @@
+Welcome to Alpine!
+
+The Alpine Wiki contains a large amount of how-to guides and general
+information about administrating Alpine systems.
+See <http://wiki.alpinelinux.org/>.
+
+
+Please note this system is READ-ONLY with a read-write overlayfs,
+after updating password make sure to save new password with
+# persist_file /etc/shadow
+
+You can change this message by editing /etc/motd.

@@ -1,0 +1,13 @@
+# Files in this directory will set/remove u-boot variables.
+# Files are loaded in alphabetical order, 00_defaults contains
+# defaults provided by Armadillo Base OS and can be updated without
+# notice so do not modify that file; create new ones instead.
+
+# variables are set as 'variable=value', for example uncommenting the
+# following line will set bootdelay to -2 and disable boot prompt:
+#bootdelay=-2
+
+# listing a variable without a value will unset the value, for example
+# uncommenting the following line would unset 'upgrade_available' and
+# disable the bootcount mechanism:
+#upgrade_available=

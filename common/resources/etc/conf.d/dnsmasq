@@ -1,0 +1,6 @@
+# fullfil our own requirements if NM is slow to start:
+# we need the directory where the resolv.conf we watch is to exist
+setup_command=setup_prenm
+setup_prenm() {
+	mkdir -p /run/NetworkManager
+}
