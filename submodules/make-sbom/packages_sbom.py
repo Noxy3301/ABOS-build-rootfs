@@ -22,7 +22,7 @@ from utility import get_spdx_id
 
 
 class PackageInfo:
-    def __init__(self, name: str, version: str, license: Union[str, list[str]]) -> None:
+    def __init__(self, name: str, version: str, license: Union[str, List[str]]) -> None:
         self.name = name
         self.version = version
         self.license_concluded = None
@@ -54,7 +54,7 @@ class PackageInfo:
             logging.debug(f"Failed to parse {name} license: {license}")
         return spdx_license
 
-    def get_license_info_from_files(self, name: str, licenses: list[str])\
+    def get_license_info_from_files(self, name: str, licenses: List[str])\
             -> List[Union[LicenseExpression, SpdxNoAssertion]]:
         return [self.get_spdx_license(name, license) for license in licenses]
 
@@ -73,7 +73,7 @@ class PackagesSbom:
             for package in self.packages
         ]
 
-    def alpine_packages_parse(self, file_lines: list[str]) -> List[PackageInfo]:
+    def alpine_packages_parse(self, file_lines: List[str]) -> List[PackageInfo]:
         # Stored in a space-separated two-dimensional array
         # Data is stored as follows
         # ['abos-base-2.0-r1', 'aarch64', '{abos-base}', '(MIT)', '[installed]\n']
@@ -90,7 +90,7 @@ class PackagesSbom:
 
         return packages_info
 
-    def debian_packages_parse(self, file_lines: list[str]) -> List[PackageInfo]:
+    def debian_packages_parse(self, file_lines: List[str]) -> List[PackageInfo]:
         # Data is stored as csv with such fields:
         # ['St', 'Name', 'Version', 'Arch', 'Description', 'Licenses']
         # ['ii', 'adduser', '3.134', 'all', 'add and remove users and groups', 'GPL-2+']
